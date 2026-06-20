@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concordia · Reservas</title>
+<style>
+  :root{
+    --ink:#16181d;
+    --bg:#ffffff;
+    --soft:#f5f6f8;
+    --soft-2:#eef0f4;
+    --line:#e3e6ec;
+    --line-2:#d6dae2;
+    --muted:#7b828f;
+    --brand:#1f8a8f;       /* teal sereno */
+    --brand-d:#166e72;
+    --brand-bg:#e6f4f4;
+    --gold:#c79a3a;        /* acento cálido para detalles */
+    --ok:#3f9d57;
+    --warn:#e0a92e;
+    --full:#cf5a45;
+    --shadow:0 1px 2px rgba(20,24,32,.04), 0 12px 28px -20px rgba(20,24,32,.4);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--soft);color:var(--ink);
+    font-family:"SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.45;padding-bottom:48px}
+  .wrap{max-width:540px;margin:0 auto;background:var(--bg);min-height:100vh;
+    box-shadow:0 0 60px -30px rgba(20,24,32,.25)}
+  .pad{padding:0 20px}
+
+  header{padding:24px 20px 0}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:9px;background:var(--brand);
+    display:flex;align-items:center;justify-content:center;color:#fff;
+    font-family:Georgia,serif;font-size:19px;font-weight:700;box-shadow:var(--shadow)}
+  .brand .name{font-family:Georgia,"Times New Roman",serif;font-size:23px;
+    font-weight:600;letter-spacing:.01em}
+  .brand .name span{color:var(--gold)}
+  .kicker{font-size:13px;color:var(--muted);margin:3px 0 0 44px}
+
+  .tabs{display:flex;gap:6px;margin:18px 0 0;padding:0 20px;align-items:center}
+  .tab{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;
+    color:var(--muted);background:var(--soft);border:1px solid var(--line);border-radius:10px;transition:.15s}
+  .tab.on{background:var(--brand);color:#fff;border-color:var(--brand-d)}
+  .admin-link{flex:0 0 auto;padding:8px 10px;font-size:11px;font-weight:600;color:var(--line-2);
+    background:none;border:0;cursor:pointer;transition:.15s}
+  .admin-link:hover{color:var(--muted)}
+
+  section{padding:20px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--brand);margin-bottom:6px}
+  h2{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;margin:4px 0 16px}
+
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 7px}
+  input,select{width:100%;padding:12px 13px;border:1px solid var(--line-2);
+    background:#fff;border-radius:10px;font-family:inherit;font-size:16px;color:var(--ink)}
+  input:focus,select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-bg)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .field{margin-bottom:18px}
+
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;padding:12px 6px;border:1px solid var(--line-2);background:#fff;
+    border-radius:10px;font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;color:var(--ink);transition:.12s}
+  .seg button.on{background:var(--brand);border-color:var(--brand-d);color:#fff}
+  .seg button:disabled{opacity:.45;cursor:not-allowed}
+
+  .meal{display:flex;gap:8px;margin-bottom:16px}
+  .meal button{flex:1;padding:11px 6px;border:1px solid var(--line-2);background:#fff;
+    border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);transition:.12s}
+  .meal button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  /* ---- Calendario ---- */
+  .cal{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff;box-shadow:var(--shadow)}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .cal-head .mon{font-size:16px;font-weight:700;text-transform:capitalize}
+  .nav{display:flex;gap:8px}
+  .nav button{width:38px;height:38px;border:1px solid var(--line-2);background:#fff;
+    border-radius:10px;font-size:17px;cursor:pointer;color:var(--ink);line-height:1}
+  .nav button:hover{background:var(--soft)}
+  .dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+  .dow span{text-align:center;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border-radius:50%;font-size:15px;cursor:pointer;position:relative;border:1.5px solid transparent;color:var(--ink)}
+  .cell.empty{cursor:default}
+  .cell.past{color:var(--line-2);cursor:not-allowed;text-decoration:line-through}
+  .cell.closed{color:var(--line-2);cursor:not-allowed}
+  .cell.today{font-weight:700}
+  .cell.sel{border-color:var(--brand);background:var(--brand-bg);font-weight:700;color:var(--brand-d)}
+  .cell:not(.past):not(.empty):not(.closed):not(.sel):hover{background:var(--soft)}
+  .dot{width:14px;height:3px;border-radius:2px;margin-top:2px}
+  .dot.hi{background:var(--ok)}       /* mucho sitio */
+  .dot.mid{background:var(--warn)}    /* queda poco */
+  .dot.lo{background:var(--full)}     /* casi lleno */
+  .cell.closed .dot,.cell.past .dot{display:none}
+
+  /* ---- Horas ---- */
+  .slots{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
+  .slot{flex:0 0 auto;min-width:84px;padding:14px 10px;border:1.5px solid var(--line-2);background:#fff;
+    border-radius:14px;cursor:pointer;text-align:center;transition:.12s}
+  .slot .t{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+  .slot .left{display:block;font-size:11px;margin-top:3px;color:var(--muted)}
+  .slot.on{background:var(--brand-bg);border-color:var(--brand);color:var(--brand-d)}
+  .slot.on .left{color:var(--brand-d)}
+  .slot.full{opacity:.4;cursor:not-allowed}
+
+  .cta{width:100%;padding:15px;margin-top:6px;background:var(--brand);color:#fff;border:0;
+    border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);transition:.12s}
+  .cta:hover{background:var(--brand-d)}
+  .cta:disabled{background:#c2c8d2;cursor:not-allowed;box-shadow:none}
+  .note{font-size:13px;color:var(--muted);margin-top:11px;text-align:center}
+
+  /* ---- Confirmación ---- */
+  .ticket{border:1px solid var(--line);background:#fff;border-radius:16px;padding:24px;
+    text-align:center;box-shadow:var(--shadow)}
+  .check{width:54px;height:54px;border-radius:50%;background:var(--brand-bg);color:var(--brand);
+    display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px}
+  .ticket h3{font-size:21px;font-weight:700;margin-bottom:4px}
+  .ticket .who{color:var(--muted);font-size:14px;margin-bottom:16px}
+  .ticket dl{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;text-align:left;
+    max-width:280px;margin:0 auto 6px;padding-top:14px;border-top:1px solid var(--line)}
+  .ticket dt{font-size:12px;font-weight:600;color:var(--muted);align-self:center}
+  .ticket dd{font-size:16px;font-weight:500}
+  .link{background:none;border:0;color:var(--brand);font-family:inherit;font-size:14px;
+    font-weight:600;cursor:pointer;margin-top:16px}
+
+  /* ---- Admin ---- */
+  .card{border:1px solid var(--line);background:#fff;border-radius:14px;padding:18px;
+    margin-bottom:14px;box-shadow:var(--shadow)}
+  .card h3{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:14px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+  .stepper{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:10px;overflow:hidden}
+  .stepper button{width:40px;height:40px;border:0;background:var(--soft);font-size:20px;cursor:pointer;color:var(--ink)}
+  .stepper button:hover{background:var(--soft-2)}
+  .stepper .val{width:52px;text-align:center;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+  .cfg-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--soft)}
+  .cfg-row:last-child{border-bottom:0}
+  .cfg-row .lbl{font-size:15px;font-weight:500}
+  .cfg-row .lbl small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+
+  .toggle{position:relative;width:48px;height:28px;flex-shrink:0}
+  .toggle input{opacity:0;width:0;height:0}
+  .toggle .track{position:absolute;inset:0;background:var(--line-2);border-radius:14px;cursor:pointer;transition:.18s}
+  .toggle .track:before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;
+    background:#fff;border-radius:50%;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .toggle input:checked + .track{background:var(--brand)}
+  .toggle input:checked + .track:before{transform:translateX(20px)}
+
+  .daygrid{display:flex;gap:6px;flex-wrap:wrap}
+  .day{width:40px;height:40px;border:1px solid var(--line-2);background:#fff;border-radius:10px;
+    font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .day.open{background:var(--brand);color:#fff;border-color:var(--brand-d)}
+
+  .agenda-row{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:10px;padding:8px 0}
+  .agenda-row .hr{font-variant-numeric:tabular-nums;font-size:15px;font-weight:500}
+  .bar{height:8px;background:var(--soft-2);border-radius:5px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--ok);border-radius:5px}
+  .bar i.hi{background:var(--warn)} .bar i.fl{background:var(--full)}
+  .agenda-row .cap{font-size:12px;color:var(--muted);min-width:54px;text-align:right;
+    font-variant-numeric:tabular-nums;font-weight:600}
+
+  .res-item{display:grid;grid-template-columns:46px 1fr auto;gap:10px;align-items:center;
+    padding:11px 0;border-bottom:1px solid var(--soft)}
+  .res-item:last-child{border-bottom:0}
+  .res-item .rt{font-variant-numeric:tabular-nums;font-size:15px;font-weight:600}
+  .res-item .rn{font-size:14px;font-weight:500}
+  .res-item .rn small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+  .pill{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 9px;border-radius:20px}
+  .pill.ter{color:var(--brand-d);background:var(--brand-bg)}
+  .pill.int{color:var(--gold);background:#f6efdd}
+  .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
+  .x:hover{color:var(--full)}
+  .empty{text-align:center;color:var(--muted);padding:22px 0;font-size:14px}
+  /* ---- Calendario admin: dos puntos + leyenda ---- */
+  .dots2{display:flex;gap:3px;margin-top:3px;justify-content:center}
+  .dots2 i{width:7px;height:7px;border-radius:50%;background:var(--line-2)}
+  .dots2 i.free{background:var(--ok)}
+  .dots2 i.some{background:var(--warn)}
+  .dots2 i.full{background:var(--full)}
+  .cell.closed .dots2{display:none}
+  .cell.adm{cursor:pointer}
+  .cell.adm.closedday{background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,.05) 4px,rgba(0,0,0,.05) 8px)}
+  .cell.adm.closedday .num{color:var(--line-2);text-decoration:line-through}
+  .cell .num{line-height:1}
+  .cal-legend{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:14px;padding-top:12px;
+    border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .cal-legend span{display:flex;align-items:center;gap:5px}
+  .cal-legend .lg{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .cal-legend .lg.free{background:var(--ok)}
+  .cal-legend .lg.some{background:var(--warn)}
+  .cal-legend .lg.full{background:var(--full)}
+  .cal-legend .lg.closed{background:var(--line-2)}
+
+  /* ---- Hoja de opciones (long-press) ---- */
+  .sheet-overlay{position:fixed;inset:0;background:rgba(16,18,22,.5);z-index:55;
+    display:flex;align-items:flex-end;justify-content:center}
+  .sheet{background:#fff;border-radius:18px 18px 0 0;padding:10px 18px 26px;width:100%;max-width:540px;
+    box-shadow:0 -10px 40px -10px rgba(0,0,0,.4);animation:sheetUp .18s ease}
+  @keyframes sheetUp{from{transform:translateY(30px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .sheet-grab{width:38px;height:4px;border-radius:3px;background:var(--line-2);margin:6px auto 14px}
+  .sheet h3{font-size:18px;font-weight:700;text-transform:capitalize;margin-bottom:2px}
+  .sheet-info{font-size:13px;color:var(--muted);margin-bottom:16px}
+  .sheet-btn{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line-2);background:#fff;
+    font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-bottom:10px;text-align:center}
+  .sheet-btn:hover{background:var(--soft)}
+  .sheet-btn.ghost{border:0;color:var(--muted);font-weight:500;margin-bottom:0}
+
+  .save{font-size:11px;font-weight:700;color:var(--ok);opacity:0;transition:.3s}
+  .save.show{opacity:1}
+  .hidden{display:none !important}
+
+  /* ---- Modal PIN ---- */
+  .pin-overlay{position:fixed;inset:0;background:rgba(16,18,22,.55);z-index:50;
+    display:flex;align-items:center;justify-content:center;padding:24px}
+  .pin-box{background:#fff;border-radius:18px;padding:26px 22px;width:100%;max-width:340px;
+    box-shadow:0 20px 60px -20px rgba(0,0,0,.5);text-align:center}
+  .pin-icon{font-size:28px;margin-bottom:8px}
+  .pin-box h3{font-size:19px;font-weight:700;margin-bottom:4px}
+  .pin-sub{color:var(--muted);font-size:14px;margin-bottom:16px}
+  #pinInput{text-align:center;font-size:20px;letter-spacing:.15em}
+  .pin-err{color:var(--full);font-size:13px;font-weight:600;margin-top:10px}
+  .pin-actions{display:flex;gap:10px;margin-top:18px}
+  .pin-actions button{flex:1;padding:13px;border-radius:11px;font-size:15px;font-weight:700;
+    cursor:pointer;border:0;position:relative;z-index:2;-webkit-tap-highlight-color:rgba(0,0,0,.1);touch-action:manipulation}
+  .pin-cancel{background:var(--soft-2);color:var(--ink)}
+  .pin-ok{background:var(--brand);color:#fff}
+  .pin-ok:hover{background:var(--brand-d)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">C</div>
+      <div class="name">Concord<span>ia</span></div>
+    </div>
+    <p class="kicker">Reserva tu mesa · comidas y cenas</p>
+  </header>
+  <div class="tabs">
+    <button class="tab on" id="tabClient" onclick="showView('client')">Reservar</button>
+    <button class="tab" id="tabAdmin" type="button" onclick="askPin()">Administrador</button>
+  </div>
+
+  <!-- ===================== MODAL PIN ===================== -->
+  <div id="pinModal" class="pin-overlay hidden">
+    <div class="pin-box">
+      <div class="pin-icon">🔒</div>
+      <h3>Acceso a gestión</h3>
+      <p class="pin-sub">Introduce la contraseña.</p>
+      <input type="password" id="pinInput" inputmode="numeric" placeholder="Contraseña" autocomplete="off">
+      <p class="pin-err hidden" id="pinErr">Contraseña incorrecta.</p>
+      <div class="pin-actions">
+        <button class="pin-cancel" id="pinCancelBtn" type="button" onclick="closePin()">Cancelar</button>
+        <button class="pin-ok" id="pinOkBtn" type="button" onclick="checkPin()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== HOJA OPCIONES DÍA ===================== -->
+  <div id="daySheet" class="sheet-overlay hidden">
+    <div class="sheet">
+      <div class="sheet-grab"></div>
+      <h3 id="sheetDate">—</h3>
+      <p class="sheet-info" id="sheetInfo">—</p>
+      <button class="sheet-btn" id="sheetAgenda">Ver agenda de este día</button>
+      <button class="sheet-btn" id="sheetClose">Cerrar / reabrir este día</button>
+      <button class="sheet-btn ghost" id="sheetCancel">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- ===================== CLIENTE ===================== -->
+  <div id="view-client">
+    <section id="form-step">
+      <p class="eyebrow">Nueva reserva</p>
+      <h2>Elige fecha y hora</h2>
+      <p class="sub">El color bajo cada día indica cuánto sitio queda.</p>
+
+      <div class="row">
+        <div>
+          <label>Personas</label>
+          <select id="cPax"></select>
+        </div>
+        <div>
+          <label>Zona</label>
+          <div class="seg" id="cZone" style="margin-top:0">
+            <button data-z="int" class="on">Interior</button>
+            <button data-z="ter">Terraza</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Servicio</label>
+        <div class="meal" id="cMeal">
+          <button data-m="lunch" class="on">Comida · 13:00–15:30</button>
+          <button data-m="dinner">Cena · 19:30–22:30</button>
+        </div>
+
+        <div class="cal">
+          <div class="cal-head">
+            <span class="mon" id="calMon">—</span>
+            <div class="nav">
+              <button onclick="moveMonth(-1)" aria-label="Mes anterior">‹</button>
+              <button onclick="moveMonth(1)" aria-label="Mes siguiente">›</button>
+            </div>
+          </div>
+          <div class="dow"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+          <div class="grid" id="calGrid"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label id="slotsLbl">Horas disponibles</label>
+        <div class="slots" id="cSlots"></div>
+      </div>
+
+      <div class="row">
+        <div><label>Nombre</label><input id="cName" placeholder="Tu nombre"></div>
+        <div><label>Teléfono</label><input id="cPhone" placeholder="600 000 000" inputmode="tel"></div>
+      </div>
+
+      <button class="cta" id="cSubmit" onclick="submitReservation()">Confirmar reserva</button>
+      <p class="note" id="cNote">Elige un día en el calendario.</p>
+    </section>
+
+    <section id="done-step" class="hidden">
+      <div class="ticket">
+        <div class="check">✓</div>
+        <h3>Reserva confirmada</h3>
+        <p class="who" id="tkName">—</p>
+        <dl>
+          <dt>Día</dt><dd id="tkDate">—</dd>
+          <dt>Hora</dt><dd id="tkTime">—</dd>
+          <dt>Personas</dt><dd id="tkPax">—</dd>
+          <dt>Zona</dt><dd id="tkZone">—</dd>
+        </dl>
+      </div>
+      <div style="text-align:center"><button class="link" onclick="resetClient()">Hacer otra reserva</button></div>
+    </section>
+  </div>
+
+  <!-- ===================== ADMIN ===================== -->
+  <div id="view-admin" class="hidden">
+    <section>
+      <p class="eyebrow">Configuración</p>
+      <h2>Aforo y zonas <span class="save" id="saveMsg">✓ Guardado</span></h2>
+      <p class="sub">Dos límites por zona: cuánta gente cabe a la vez y cuánta puede reservar la misma hora.</p>
+
+      <div class="card">
+        <h3>Aforo total · gente sentada a la vez</h3>
+        <div class="cfg-row">
+          <div class="lbl">Interior <small>contando 2h por mesa</small></div>
+          <div class="stepper"><button onclick="stepCfg('capTotal','int',-5)">−</button><span class="val" id="capTotalInt">80</span><button onclick="stepCfg('capTotal','int',5)">+</button></div>
+        </div>
+        <div class="cfg-row">
+          <div class="lbl">Terraza <small>contando 2h por mesa</small></div>
+          <div class="stepper"><button onclick="stepCfg('capTotal','ter',-5)">−</button><span class="val" id="capTotalTer">40</span><button onclick="stepCfg('capTotal','ter',5)">+</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Tope por hora · reservas en la misma franja</h3>
+        <div class="cfg-row">
+          <div class="lbl">Interior <small>máx. que reservan esa hora</small></div>
+          <div class="stepper"><button onclick="stepCfg('capSlot','int',-2)">−</button><span class="val" id="capSlotInt">20</span><button onclick="stepCfg('capSlot','int',2)">+</button></div>
+        </div>
+        <div class="cfg-row">
+          <div class="lbl">Terraza <small>máx. que reservan esa hora</small></div>
+          <div class="stepper"><button onclick="stepCfg('capSlot','ter',-2)">−</button><span class="val" id="capSlotTer">12</span><button onclick="stepCfg('capSlot','ter',2)">+</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Duración de la mesa</h3>
+        <div class="cfg-row">
+          <div class="lbl">Tiempo medio por reserva <small>cuánto ocupa la mesa</small></div>
+          <div class="stepper"><button onclick="stepDur(-30)">−</button><span class="val" id="durVal">2h</span><button onclick="stepDur(30)">+</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Disponibilidad</h3>
+        <div class="cfg-row">
+          <div class="lbl">Terraza abierta <small>desactívala si llueve</small></div>
+          <label class="toggle"><input type="checkbox" id="terOpen" checked onchange="toggleTer()"><span class="track"></span></label>
+        </div>
+        <div class="cfg-row">
+          <div class="lbl">Servicio de comida <small>13:00 – 15:30</small></div>
+          <label class="toggle"><input type="checkbox" id="lunchOpen" checked onchange="saveFlash()"><span class="track"></span></label>
+        </div>
+        <div class="cfg-row">
+          <div class="lbl">Servicio de cena <small>19:30 – 22:30</small></div>
+          <label class="toggle"><input type="checkbox" id="dinnerOpen" checked onchange="saveFlash()"><span class="track"></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Días de apertura</h3>
+        <div class="daygrid" id="dayGrid"></div>
+        <p class="note" style="text-align:left;margin-top:12px">Toca un día para abrir o cerrar.</p>
+      </div>
+    </section>
+
+    <section style="padding-top:0">
+      <p class="eyebrow">Vista del mes</p>
+      <h2>Resumen mensual</h2>
+      <p class="sub">Dos puntos por día: comida (izq.) y cena (der.). Verde sin reservas, naranja con reservas, rojo completo. Mantén pulsado un día para más opciones.</p>
+
+      <div class="cal" id="adminCal">
+        <div class="cal-head">
+          <span class="mon" id="aCalMon">—</span>
+          <div class="nav">
+            <button onclick="moveAdminMonth(-1)" aria-label="Mes anterior">‹</button>
+            <button onclick="moveAdminMonth(1)" aria-label="Mes siguiente">›</button>
+          </div>
+        </div>
+        <div class="dow"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+        <div class="grid" id="aCalGrid"></div>
+        <div class="cal-legend">
+          <span><i class="lg free"></i> Sin reservas</span>
+          <span><i class="lg some"></i> Con reservas</span>
+          <span><i class="lg full"></i> Completo</span>
+          <span><i class="lg closed"></i> Cerrado</span>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding-top:0">
+      <p class="eyebrow">Agenda del día</p>
+      <h2 id="agDateLabel">Hoy</h2>
+      <p class="sub">Ocupación por franja y reservas recibidas.</p>
+      <div class="field"><input type="date" id="agDate" onchange="renderAdmin()"></div>
+      <div class="card"><h3>Ocupación · Interior</h3><div id="agendaInt"></div></div>
+      <div class="card"><h3>Ocupación · Terraza</h3><div id="agendaTer"></div></div>
+      <div class="card"><h3>Reservas <span id="resCount" style="color:var(--muted);font-weight:400"></span></h3><div id="resList"></div></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const SLOTS = {
+  lunch:  ["13:00","13:30","14:00","14:30","15:00","15:30"],
+  dinner: ["19:30","20:00","20:30","21:00","21:30","22:00","22:30"]
+};
+const DAYS = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+
+const SLOT_MIN = 30;          // cada franja son 30 min
+const state = {
+  // aforo total simultáneo (gente sentada a la vez) por zona
+  capTotal:{int:80, ter:40},
+  // tope de comensales que pueden RESERVAR la misma franja, por zona
+  capSlot:{int:20, ter:12},
+  // duración de la mesa en minutos (cuántas franjas arrastra una reserva)
+  durationMin:120,
+  terOpen:true, lunchOpen:true, dinnerOpen:true,
+  openDays:[true,true,true,true,true,true,false],
+  closedDates:[],   // fechas concretas cerradas (ISO), independientes del día de semana
+  reservations:[]
+};
+const sel = { zone:"int", meal:"lunch", date:null, time:null };
+let calView = new Date(); calView.setDate(1);
+const ADMIN_PIN = "123456";
+
+// poblar desplegable de personas (1..20)
+(function(){ const s=document.getElementById("cPax");
+  for(let i=1;i<=20;i++){ const o=document.createElement("option");
+    o.value=i; o.textContent=i; if(i===2)o.selected=true; s.appendChild(o); } })();
+
+// ---- helpers de tiempo ----
+function toMin(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
+function slotsSpanned(){ return Math.max(1, Math.round(state.durationMin/SLOT_MIN)); }
+
+function askPin(){
+  document.getElementById("pinInput").value="";
+  document.getElementById("pinErr").classList.add("hidden");
+  document.getElementById("pinModal").classList.remove("hidden");
+  setTimeout(()=>document.getElementById("pinInput").focus(),50);
+}
+function closePin(){ document.getElementById("pinModal").classList.add("hidden"); }
+function checkPin(){
+  const v=document.getElementById("pinInput").value.trim();
+  if(v===ADMIN_PIN){
+    document.getElementById("pinErr").classList.add("hidden");
+    closePin(); showView("admin");
+  } else {
+    document.getElementById("pinErr").classList.remove("hidden");
+  }
+}
+
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function toISO(d){ return d.toISOString().slice(0,10); }
+function isoDay(iso){ const d=new Date(iso+"T12:00:00"); return (d.getDay()+6)%7; }
+// Un día está cerrado si su día de semana está cerrado, o si la fecha concreta está cerrada
+function isDayClosed(iso){
+  return !state.openDays[isoDay(iso)] || state.closedDates.includes(iso);
+}
+function toggleClosedDate(iso){
+  const i=state.closedDates.indexOf(iso);
+  if(i>=0) state.closedDates.splice(i,1); else state.closedDates.push(iso);
+}
+function fmtDate(iso){ const d=new Date(iso+"T12:00:00");
+  return d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}); }
+
+// ---- disponibilidad ----
+// comensales que RESERVAN exactamente esta franja (para el tope por franja)
+function bookedAtSlot(date,time,zone){
+  return state.reservations
+    .filter(r=>r.date===date && r.time===time && r.zone===zone)
+    .reduce((s,r)=>s+r.pax,0);
+}
+// comensales SENTADOS durante esta franja, contando que cada reserva dura X min
+function seatedAt(date,time,zone){
+  const dur=state.durationMin;
+  const tStart=toMin(time), tEnd=tStart+SLOT_MIN; // ventana de la franja consultada
+  return state.reservations
+    .filter(r=>r.date===date && r.zone===zone)
+    .filter(r=>{ const rs=toMin(r.time), re=rs+dur; return rs < tEnd && re > tStart; }) // solapa
+    .reduce((s,r)=>s+r.pax,0);
+}
+// plazas libres reales = el menor de los dos límites
+function freeSeats(date,time,zone){
+  const bySlot  = state.capSlot[zone]  - bookedAtSlot(date,time,zone); // tope por franja
+  const byTotal = state.capTotal[zone] - seatedAt(date,time,zone);     // aforo simultáneo
+  return Math.max(0, Math.min(bySlot, byTotal));
+}
+
+// resumen de ocupación de un día (para el punto de color) según zona/servicios activos
+function dayLoad(iso){
+  if(isDayClosed(iso)) return null;            // cerrado
+  const meals=[]; if(state.lunchOpen)meals.push("lunch"); if(state.dinnerOpen)meals.push("dinner");
+  if(!meals.length) return null;
+  let cap=0, used=0;
+  meals.forEach(m=>SLOTS[m].forEach(t=>{
+    cap+=state.capSlot[sel.zone];
+    used+=bookedAtSlot(iso,t,sel.zone);
+  }));
+  if(cap===0) return null;
+  const ratio=used/cap;                                    // 0 vacío .. 1 lleno
+  return ratio>=.85?"lo":ratio>=.5?"mid":"hi";
+}
+
+// Estado de un servicio (lunch/dinner) en un día, sumando interior + terraza.
+// Devuelve: "free" (sin reservas) | "some" (alguna) | "full" (alcanza aforo total combinado)
+function serviceStatus(iso, meal){
+  const capCombined = state.capTotal.int + state.capTotal.ter;
+  let anyRes=false, peakCombined=0;
+  SLOTS[meal].forEach(t=>{
+    const seated = seatedAt(iso,t,"int") + seatedAt(iso,t,"ter");
+    if(seated>0) anyRes=true;
+    if(seated>peakCombined) peakCombined=seated;
+  });
+  if(peakCombined>=capCombined && capCombined>0) return "full";
+  return anyRes ? "some" : "free";
+}
+function totalResOnDay(iso){
+  return state.reservations.filter(r=>r.date===iso).length;
+}
+
+// ---- navegación ----
+function showView(v){
+  document.getElementById("view-client").classList.toggle("hidden",v!=="client");
+  document.getElementById("view-admin").classList.toggle("hidden",v!=="admin");
+  document.getElementById("tabClient").classList.toggle("on",v==="client");
+  document.getElementById("tabAdmin").classList.toggle("on",v==="admin");
+  if(v==="admin") renderAdmin();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+// ---- calendario ----
+function moveMonth(n){ calView.setMonth(calView.getMonth()+n); renderCalendar(); }
+function renderCalendar(){
+  const y=calView.getFullYear(), m=calView.getMonth();
+  document.getElementById("calMon").textContent =
+    calView.toLocaleDateString("es-ES",{month:"long",year:"numeric"});
+  const grid=document.getElementById("calGrid"); grid.innerHTML="";
+  const first=(new Date(y,m,1).getDay()+6)%7;              // 0=Lunes
+  const days=new Date(y,m+1,0).getDate();
+  const today=todayISO();
+  for(let i=0;i<first;i++){ const e=document.createElement("div"); e.className="cell empty"; grid.appendChild(e); }
+  for(let d=1; d<=days; d++){
+    const iso=toISO(new Date(y,m,d));
+    const cell=document.createElement("div"); cell.className="cell";
+    const past=iso<today;
+    const closed=isDayClosed(iso);
+    if(past) cell.classList.add("past");
+    else if(closed) cell.classList.add("closed");
+    if(iso===today) cell.classList.add("today");
+    if(iso===sel.date) cell.classList.add("sel");
+    const load = (!past&&!closed)? dayLoad(iso) : null;
+    cell.innerHTML = `${d}` + (load?`<span class="dot ${load}"></span>`:`<span class="dot" style="background:transparent"></span>`);
+    if(!past && !closed){ cell.onclick=()=>{ sel.date=iso; sel.time=null; renderCalendar(); renderSlots(); }; }
+    grid.appendChild(cell);
+  }
+}
+
+// ---- horas ----
+function renderSlots(){
+  const box=document.getElementById("cSlots");
+  const lbl=document.getElementById("slotsLbl");
+  box.innerHTML="";
+  if(!sel.date){ box.innerHTML=`<p class="empty" style="width:100%">Elige un día primero.</p>`; updateSubmit(); return; }
+  lbl.textContent = `Horas · ${fmtDate(sel.date)}`;
+  const mealOpen = sel.meal==="lunch"?state.lunchOpen:state.dinnerOpen;
+  if(!mealOpen){ box.innerHTML=`<p class="empty" style="width:100%">Servicio no disponible.</p>`; updateSubmit(); return; }
+  const pax=+document.getElementById("cPax").value;
+  SLOTS[sel.meal].forEach(t=>{
+    const free=freeSeats(sel.date,t,sel.zone);
+    const enough=free>=pax;
+    const el=document.createElement("button"); el.className="slot";
+    if(!enough)el.classList.add("full");
+    if(sel.time===t)el.classList.add("on");
+    el.innerHTML=`<span class="t">${t}</span><span class="left">${free<=0?"Completo":enough?free+" libres":"Sin sitio"}</span>`;
+    if(enough) el.onclick=()=>{ sel.time=t; renderSlots(); };
+    box.appendChild(el);
+  });
+  updateSubmit();
+}
+
+function updateSubmit(){
+  const ok=sel.date&&sel.time&&document.getElementById("cName").value.trim()&&document.getElementById("cPhone").value.trim();
+  document.getElementById("cSubmit").disabled=!ok;
+  const n=document.getElementById("cNote");
+  if(!sel.date)n.textContent="Elige un día en el calendario.";
+  else if(!sel.time)n.textContent="Selecciona una hora.";
+  else if(!ok)n.textContent="Completa nombre y teléfono.";
+  else n.textContent="Todo listo. Pulsa confirmar.";
+}
+
+function initClient(){
+  document.getElementById("cPax").onchange=()=>{ renderCalendar(); renderSlots(); };
+  document.querySelectorAll("#cZone button").forEach(b=>{
+    b.onclick=()=>{ if(b.dataset.z==="ter"&&!state.terOpen)return;
+      document.querySelectorAll("#cZone button").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); sel.zone=b.dataset.z; sel.time=null; renderCalendar(); renderSlots(); };
+  });
+  document.querySelectorAll("#cMeal button").forEach(b=>{
+    b.onclick=()=>{ document.querySelectorAll("#cMeal button").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); sel.meal=b.dataset.m; sel.time=null; renderCalendar(); renderSlots(); };
+  });
+  syncZone(); renderCalendar(); renderSlots();
+}
+function syncZone(){
+  const t=document.querySelector('#cZone button[data-z="ter"]');
+  t.disabled=!state.terOpen; t.textContent=state.terOpen?"Terraza":"Terraza (cerrada)";
+  if(!state.terOpen&&sel.zone==="ter"){ sel.zone="int";
+    document.querySelectorAll("#cZone button").forEach(x=>x.classList.remove("on"));
+    document.querySelector('#cZone button[data-z="int"]').classList.add("on"); }
+}
+document.addEventListener("input",e=>{ if(e.target.id==="cName"||e.target.id==="cPhone") updateSubmit(); });
+
+function submitReservation(){
+  const pax=+document.getElementById("cPax").value;
+  if(freeSeats(sel.date,sel.time,sel.zone)<pax){
+    alert("Esa hora se acaba de llenar. Elige otra, por favor."); renderSlots(); return; }
+  const r={id:Date.now(),date:sel.date,time:sel.time,pax,zone:sel.zone,
+    name:document.getElementById("cName").value.trim(),phone:document.getElementById("cPhone").value.trim()};
+  state.reservations.push(r);
+  document.getElementById("tkName").textContent=r.name;
+  document.getElementById("tkDate").textContent=fmtDate(r.date);
+  document.getElementById("tkTime").textContent=r.time;
+  document.getElementById("tkPax").textContent=r.pax+(r.pax==1?" persona":" personas");
+  document.getElementById("tkZone").textContent=r.zone==="ter"?"Terraza":"Interior";
+  document.getElementById("form-step").classList.add("hidden");
+  document.getElementById("done-step").classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function resetClient(){
+  sel.time=null; document.getElementById("cName").value=""; document.getElementById("cPhone").value="";
+  document.getElementById("done-step").classList.add("hidden");
+  document.getElementById("form-step").classList.remove("hidden");
+  renderCalendar(); renderSlots();
+}
+
+// ---- admin ----
+function stepCfg(group,z,d){
+  state[group][z]=Math.max(0,state[group][z]+d);
+  syncCfgLabels(); saveFlash(); renderAdmin();
+}
+function stepDur(d){
+  state.durationMin=Math.max(30, Math.min(240, state.durationMin+d));
+  syncCfgLabels(); saveFlash(); renderAdmin();
+}
+function fmtDur(min){
+  const h=Math.floor(min/60), m=min%60;
+  return (h?h+"h":"")+(m?" "+m+"min":"").trim() || m+"min";
+}
+function syncCfgLabels(){
+  document.getElementById("capTotalInt").textContent=state.capTotal.int;
+  document.getElementById("capTotalTer").textContent=state.capTotal.ter;
+  document.getElementById("capSlotInt").textContent=state.capSlot.int;
+  document.getElementById("capSlotTer").textContent=state.capSlot.ter;
+  document.getElementById("durVal").textContent=fmtDur(state.durationMin);
+}
+function toggleTer(){ state.terOpen=document.getElementById("terOpen").checked; syncZone(); renderCalendar(); saveFlash(); }
+function saveFlash(){
+  state.lunchOpen=document.getElementById("lunchOpen").checked;
+  state.dinnerOpen=document.getElementById("dinnerOpen").checked;
+  const m=document.getElementById("saveMsg"); m.classList.add("show"); setTimeout(()=>m.classList.remove("show"),1100);
+}
+function buildDayGrid(){
+  const g=document.getElementById("dayGrid"); g.innerHTML="";
+  DAYS.forEach((nm,i)=>{ const b=document.createElement("button");
+    b.className="day"+(state.openDays[i]?" open":""); b.textContent=nm;
+    b.onclick=()=>{ state.openDays[i]=!state.openDays[i]; b.classList.toggle("open",state.openDays[i]); saveFlash(); };
+    g.appendChild(b); });
+}
+function renderAdmin(){
+  syncCfgLabels();
+  renderAdminCal();
+  const date=document.getElementById("agDate").value||todayISO();
+  if(!document.getElementById("agDate").value)document.getElementById("agDate").value=date;
+  document.getElementById("agDateLabel").textContent=date===todayISO()?"Hoy":fmtDate(date);
+  renderAgenda("int",document.getElementById("agendaInt"),date);
+  renderAgenda("ter",document.getElementById("agendaTer"),date);
+  renderResList(date);
+}
+
+// ---- Calendario resumen del mes (admin) ----
+let aCalView = new Date(); aCalView.setDate(1);
+function moveAdminMonth(n){ aCalView.setMonth(aCalView.getMonth()+n); renderAdminCal(); }
+function renderAdminCal(){
+  const y=aCalView.getFullYear(), m=aCalView.getMonth();
+  document.getElementById("aCalMon").textContent =
+    aCalView.toLocaleDateString("es-ES",{month:"long",year:"numeric"});
+  const grid=document.getElementById("aCalGrid"); grid.innerHTML="";
+  const first=(new Date(y,m,1).getDay()+6)%7;
+  const days=new Date(y,m+1,0).getDate();
+  for(let i=0;i<first;i++){ const e=document.createElement("div"); e.className="cell empty"; grid.appendChild(e); }
+  for(let d=1; d<=days; d++){
+    const iso=toISO(new Date(y,m,d));
+    const closed=isDayClosed(iso);
+    const cell=document.createElement("div");
+    cell.className="cell adm"+(closed?" closedday":"");
+    const lunch=closed?"":serviceStatus(iso,"lunch");
+    const dinner=closed?"":serviceStatus(iso,"dinner");
+    cell.innerHTML=`<span class="num">${d}</span>`+
+      (closed?"":`<span class="dots2"><i class="${lunch}"></i><i class="${dinner}"></i></span>`);
+    attachLongPress(cell, iso);
+    grid.appendChild(cell);
+  }
+}
+
+// ---- Long-press / pulsación larga para abrir opciones del día ----
+let lpTimer=null, lpFired=false;
+function attachLongPress(cell, iso){
+  const start=()=>{ lpFired=false; lpTimer=setTimeout(()=>{ lpFired=true; openDaySheet(iso); }, 450); };
+  const cancel=()=>{ clearTimeout(lpTimer); };
+  cell.addEventListener("touchstart", start, {passive:true});
+  cell.addEventListener("touchend", e=>{ cancel(); if(lpFired) e.preventDefault(); }, {passive:false});
+  cell.addEventListener("touchmove", cancel, {passive:true});
+  // soporte ratón (escritorio): mousedown largo y también clic normal abre el menú
+  cell.addEventListener("mousedown", start);
+  cell.addEventListener("mouseup", cancel);
+  cell.addEventListener("mouseleave", cancel);
+  // clic corto: también abrir la hoja (más cómodo que solo long-press)
+  cell.addEventListener("click", ()=>{ if(!lpFired) openDaySheet(iso); });
+}
+
+// ---- Hoja de opciones del día ----
+let sheetISO=null;
+function openDaySheet(iso){
+  sheetISO=iso;
+  const closed=isDayClosed(iso);
+  const weeklyClosed=!state.openDays[isoDay(iso)];
+  const n=totalResOnDay(iso);
+  document.getElementById("sheetDate").textContent=fmtDate(iso);
+  document.getElementById("sheetInfo").textContent=
+    (closed?"Día cerrado. ":"")+(n? `${n} reserva${n>1?"s":""} este día.`:"Sin reservas este día.");
+  // Si está cerrado por día de semana, avisamos; el botón gestiona el cierre por fecha concreta
+  const btn=document.getElementById("sheetClose");
+  if(weeklyClosed && !state.closedDates.includes(iso)){
+    btn.textContent="Este día de la semana está cerrado";
+    btn.disabled=true; btn.style.opacity=".5";
+  } else {
+    btn.disabled=false; btn.style.opacity="1";
+    btn.textContent = state.closedDates.includes(iso) ? "Reabrir este día" : "Cerrar solo este día";
+  }
+  document.getElementById("daySheet").classList.remove("hidden");
+}
+function closeDaySheet(){ document.getElementById("daySheet").classList.add("hidden"); }
+function sheetToggleClosed(){
+  if(sheetISO==null) return;
+  toggleClosedDate(sheetISO);   // cierra/reabre SOLO esa fecha concreta
+  saveFlash(); renderAdmin(); renderCalendar(); closeDaySheet();
+}
+function sheetGoAgenda(){
+  if(sheetISO==null) return;
+  document.getElementById("agDate").value=sheetISO;
+  closeDaySheet(); renderAdmin();
+  document.getElementById("agDateLabel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function renderAgenda(zone,box,date){
+  box.innerHTML=""; const capT=state.capTotal[zone], capS=state.capSlot[zone];
+  [...SLOTS.lunch,...SLOTS.dinner].forEach(t=>{
+    const seated=seatedAt(date,t,zone);      // sentados a la vez (arrastra 2h)
+    const slot=bookedAtSlot(date,t,zone);    // reservan esta franja
+    const pct=capT?Math.min(100,seated/capT*100):0;
+    const cls=pct>=100?"fl":pct>=70?"hi":"";
+    const row=document.createElement("div"); row.className="agenda-row";
+    row.innerHTML=`<span class="hr">${t}</span>
+      <span class="bar"><i class="${cls}" style="width:${pct}%"></i></span>
+      <span class="cap">${seated}/${capT}<small style="display:block;font-weight:400;color:var(--muted)">${slot}/${capS} franja</small></span>`;
+    box.appendChild(row);
+  });
+}
+function renderResList(date){
+  const list=state.reservations.filter(r=>r.date===date).sort((a,b)=>a.time.localeCompare(b.time));
+  const box=document.getElementById("resList");
+  document.getElementById("resCount").textContent=list.length?`· ${list.length}`:"";
+  if(!list.length){ box.innerHTML=`<p class="empty">Sin reservas para este día.</p>`; return; }
+  box.innerHTML="";
+  list.forEach(r=>{ const it=document.createElement("div"); it.className="res-item";
+    it.innerHTML=`<span class="rt">${r.time}</span><span class="rn">${r.name}<small>${r.pax} pax · ${r.phone}</small></span>
+      <span style="display:flex;align-items:center;gap:8px"><span class="pill ${r.zone}">${r.zone==="ter"?"Terraza":"Interior"}</span>
+      <button class="x" onclick="cancelRes(${r.id})" title="Cancelar">✕</button></span>`;
+    box.appendChild(it); });
+}
+function cancelRes(id){ if(!confirm("¿Cancelar esta reserva?"))return;
+  state.reservations=state.reservations.filter(r=>r.id!==id); renderAdmin(); }
+
+// ---- seed ----
+(function(){ const d=todayISO();
+  // mañana, para demostrar comida COMPLETA (punto rojo): 120 sentados = 80 int + 40 ter
+  const t=new Date(); t.setDate(t.getDate()+1); const dm=t.toISOString().slice(0,10);
+  state.reservations.push(
+    {id:1,date:d,time:"14:00",pax:4,zone:"int",name:"Marta Vidal",phone:"611 222 333"},
+    {id:2,date:d,time:"14:00",pax:2,zone:"ter",name:"Luis Pena",phone:"622 111 444"},
+    {id:3,date:d,time:"21:00",pax:6,zone:"int",name:"Grupo Sánchez",phone:"600 555 666"},
+    // día siguiente: llenar comida (interior 80 + terraza 40 sentados a la vez)
+    {id:4,date:dm,time:"13:00",pax:20,zone:"int",name:"Reserva 1",phone:"600 000 001"},
+    {id:5,date:dm,time:"13:00",pax:20,zone:"int",name:"Reserva 2",phone:"600 000 002"},
+    {id:6,date:dm,time:"13:30",pax:20,zone:"int",name:"Reserva 3",phone:"600 000 003"},
+    {id:7,date:dm,time:"14:00",pax:20,zone:"int",name:"Reserva 4",phone:"600 000 004"},
+    {id:8,date:dm,time:"13:00",pax:12,zone:"ter",name:"Reserva 5",phone:"600 000 005"},
+    {id:9,date:dm,time:"13:30",pax:12,zone:"ter",name:"Reserva 6",phone:"600 000 006"},
+    {id:10,date:dm,time:"14:00",pax:16,zone:"ter",name:"Reserva 7",phone:"600 000 007"}
+  );
+})();
+buildDayGrid(); initClient();
+
+// Arranque garantizado en modo USUARIO (Reservar), nunca admin.
+// Edge/Safari pueden restaurar la sesión anterior; esto lo normaliza al cargar.
+function bootUserView(){
+  document.getElementById("pinModal").classList.add("hidden");
+  const ds=document.getElementById("daySheet"); if(ds) ds.classList.add("hidden");
+  document.getElementById("view-admin").classList.add("hidden");
+  document.getElementById("view-client").classList.remove("hidden");
+  document.getElementById("tabClient").classList.add("on");
+  document.getElementById("tabAdmin").classList.remove("on");
+  const pin=document.getElementById("pinInput"); if(pin) pin.value="";
+}
+bootUserView();
+window.addEventListener("pageshow", bootUserView);   // al volver de caché/restauración
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) bootUserView(); });
+setTimeout(bootUserView, 0);   // segundo intento por si el visor ejecuta tarde
+
+// Cerrar el modal tocando la zona oscura de fuera
+(function(){
+  const ov=document.getElementById("pinModal");
+  if(ov) ov.addEventListener("click", e=>{ if(e.target===ov) closePin(); });
+})();
+
+// Enter en el campo valida la clave
+document.getElementById("pinInput").addEventListener("keydown",e=>{ if(e.key==="Enter") checkPin(); });
+
+// Botones de la hoja de opciones del día
+document.getElementById("sheetAgenda").addEventListener("click", sheetGoAgenda);
+document.getElementById("sheetClose").addEventListener("click", sheetToggleClosed);
+document.getElementById("sheetCancel").addEventListener("click", closeDaySheet);
+document.getElementById("daySheet").addEventListener("click", e=>{
+  if(e.target.id==="daySheet") closeDaySheet();   // tocar fuera cierra
+});
+</script>
+</body>
+</html>
